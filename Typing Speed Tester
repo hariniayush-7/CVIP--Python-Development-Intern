@@ -1,0 +1,34 @@
+import time
+import random
+
+def generate_random_sentences(sentence_count):
+   
+    sentence_list = ["there is always a new beginning"]
+    return random.sample(sentence_list, sentence_count)
+
+def typing_speed_test():
+    print("Welcome to the Typing Speed Tester!")
+    input("Press Enter when you are ready to start typing...")
+    
+    start_time = time.time()
+    
+    sentence_count = 1  
+    sentences_to_type = generate_random_sentences(sentence_count)
+    
+    typed_text = input("Type the following sentence:\n{}\n".format("\n".join(sentences_to_type)))
+    
+    end_time = time.time()
+    
+   
+    elapsed_time = end_time - start_time
+    sentences_per_minute = (sentence_count / elapsed_time) * 60
+    
+   
+    correct_sentences = sum(1 for a, b in zip(typed_text.split('. '), sentences_to_type) if a == b)
+    accuracy = (correct_sentences / sentence_count) * 100
+    
+    print("\nTyping Speed: {:.2f} sentences per minute".format(sentences_per_minute))
+    print("Accuracy: {:.2f}%".format(accuracy))
+
+if __name__ == "__main__":
+    typing_speed_test()

@@ -1,0 +1,77 @@
+import sounddevice as sd
+import numpy as np
+import wave
+import os
+import tkinter as tk
+from tkinter import filedialog
+
+class VoiceRecorder:
+    def __init__(self):
+        self.sampling_frequency = 44100
+        self.channels = 2
+        self.duration = 10  # seconds
+        self.output_folder = "recordings"
+        self.current_recording = None
+
+        self.root = tk.Tk()
+        self.root.title("Voice Recorder")
+
+        self.record_button = tk.Button(self.root, text="Record", command=self.start_recording)
+        self.record_button.pack(pady=10)
+
+        self.stop_button = tk.Button(self.root, text="Stop", command=self.stop_recording, state=tk.DISABLED)
+        self.stop_button.pack(pady=10)
+
+        self.save_button = tk.Button(self.root, text="Save", command=self.save_recording, state=tk.DISABLED)
+        self.save_button.pack(pady=10)
+
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+
+    def start_recording(self):
+        self.current_recording = np.array([])
+        self.record_button.config(state=tk.DISABLED)
+        self.stop_button.config(state=tk.NORMAL)
+
+        def callback(indata, frames, time, status):
+            if status:
+                print('Error:', status)
+            self.current_recording = np.append(self.current_recording, indata.copy())
+
+        with sd.InputStream(callback=callback, channels=self.channels, samplerate=self.sampling_frequency):
+            sd.sleep(self.duration * 1000)
+
+    def stop_recording(self):
+        self.record_button.config(state=tk.NORMAL)
+        self.stop_button.config(state=tk.DISABLED)
+        self.save_button.config(state=tk.NORMAL)
+
+    def save_recording(self):
+        if not os.path.exists(self.output_folder):
+            os.makedirs(self.output_folder)
+
+        file_path = filedialog.asksaveasfilename(defaultextension=".wav",
+                                                   filetypes=[("Wave files", "*.wav")],
+                                                   title="Save Recording As",
+                                                   initialdir=self.output_folder)
+
+        if file_path:
+            wf = wave.open(file_path, 'wb')
+            wf.setnchannels(self.channels)
+            wf.setsampwidth(2)  # 16-bit audio
+            wf.setframerate(self.sampling_frequency)
+            wf.writeframes((self.current_recording * 32767).astype(np.int16).tobytes())
+            wf.close()
+
+    def on_closing(self):
+        if self.current_recording is not None and len(self.current_recording) > 0:
+            if tk.messagebox.askokcancel("Quit", "Do you want to exit without saving the recording?"):
+                self.root.destroy()
+        else:
+            self.root.destroy()
+
+    def run(self):
+        self.root.mainloop()
+
+if __name__ == "__main__":
+    voice_recorder = VoiceRecorder()
+    voice_recorder.run()
